@@ -32,6 +32,10 @@ export const trialListDurationTimeUnitState = atom<"ms" | "s" | "min" | "h">(
   "ms"
 )
 
+export const studyHistoryLogScaleState = atom<boolean>(false)
+
+export const studyHistoryIncludePrunedState = atom<boolean>(true)
+
 export const usePlotBackendRendering = () => {
   return useLocalStorage<boolean>("plotBackendRendering", false)
 }

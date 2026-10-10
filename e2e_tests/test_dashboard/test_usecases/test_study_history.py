@@ -1,4 +1,5 @@
 import optuna
+from playwright.sync_api import expect
 from playwright.sync_api import Page
 import pytest
 
@@ -64,3 +65,40 @@ def test_history_xaxis_click(
     title = element.text_content()
     assert title is not None
     assert study_name in title
+
+
+@pytest.mark.parametrize("log_scale,include_pruned", [(True, False), (True, True), (False, False)])
+def test_history_filters_survive_navigation(
+    page: Page,
+    storage: optuna.storages.InMemoryStorage,
+    server_url: str,
+    log_scale: bool,
+    include_pruned: bool,
+) -> None:
+    summary = optuna.get_all_study_summaries(storage)[0]
+    study = optuna.load_study(study_name=summary.study_name, storage=storage)
+    study.add_trial(
+        optuna.trial.create_trial(
+            state=optuna.trial.TrialState.PRUNED, intermediate_values={0: 1.0}
+        )
+    )
+    url = f"{server_url}/studies/{summary._study_id}"
+    page.goto(url)
+
+    log_scale_switch = page.get_by_label("Log y scale", exact=True)
+    include_pruned_switch = page.get_by_label("Include PRUNED trials", exact=True)
+    expect(log_scale_switch).not_to_be_checked()
+    expect(include_pruned_switch).to_be_enabled()
+    expect(include_pruned_switch).to_be_checked()
+    log_scale_switch.set_checked(log_scale)
+    include_pruned_switch.set_checked(include_pruned)
+
+    for _ in range(2):
+        page.get_by_title("Trials (List)", exact=True).get_by_role("link").click()
+        expect(page).to_have_url(f"{url}/trials")
+        expect(log_scale_switch).not_to_be_attached()
+        page.get_by_title("History", exact=True).get_by_role("link").click()
+        expect(page).to_have_url(url)
+        expect(include_pruned_switch).to_be_enabled()
+        expect(log_scale_switch).to_be_checked(checked=log_scale)
+        expect(include_pruned_switch).to_be_checked(checked=include_pruned)

@@ -11,9 +11,12 @@ import FormControlLabel from "@mui/material/FormControlLabel"
 import Grid from "@mui/material/Grid"
 import { DataGrid } from "@optuna/react"
 import * as Optuna from "@optuna/types"
-import { FC, useState } from "react"
+import { useAtom } from "jotai"
+import { FC } from "react"
 import { Trial } from "ts/types/optuna"
 import {
+  studyHistoryIncludePrunedState,
+  studyHistoryLogScaleState,
   useStudyDetailValue,
   useStudyDirections,
   useStudySummaryValue,
@@ -35,8 +38,10 @@ export const StudyHistory: FC<{ studyId: number }> = ({ studyId }) => {
   const directions = useStudyDirections(studyId)
   const studySummary = useStudySummaryValue(studyId)
   const studyDetail = useStudyDetailValue(studyId)
-  const [logScale, setLogScale] = useState<boolean>(false)
-  const [includePruned, setIncludePruned] = useState<boolean>(true)
+  const [logScale, setLogScale] = useAtom(studyHistoryLogScaleState)
+  const [includePruned, setIncludePruned] = useAtom(
+    studyHistoryIncludePrunedState
+  )
   const artifactEnabled = useArtifactIsAvailable()
 
   const handleLogScaleChange = () => {
